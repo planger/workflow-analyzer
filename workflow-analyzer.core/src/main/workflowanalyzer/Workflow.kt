@@ -52,7 +52,7 @@ sealed class Node(val id: String?) {
 				when (nextNode) {
 					is Decision -> {
 						val probabilitySoFar = previousResult.first
-						val nextProbability = nextNode.probabilities.getOrDefault(previousResult.second, 1f)
+						val nextProbability = nextNode.probabilities[previousResult.second] ?: 1f
 						val combinedProbability = probabilitySoFar * nextProbability
 						Pair(combinedProbability, nextNode)
 					}
