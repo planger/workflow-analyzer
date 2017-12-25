@@ -20,27 +20,45 @@ sealed class Node(val id: String?) {
 
 	val directlyPrecedingDecision: Decision?
 		get() {
-			/* In a valid workflow diagram, we'll find the decision node by following any path backwards.
- 			 * We might visit other merge nodes before, but we'll jump over them to reach the decision
- 			 * node that corresponds to this decision node (see cycleSavePredecessorSequenceJumpingOverFullDecisionGroups). */
 			val predecessorSequence = predecessorsSkippingDecisionGroups(this.incoming.firstOrNull())
 			return predecessorSequence.firstOrNull() { it is Decision } as Decision?
 		}
 
+	/**
+	 * Returns a sequence of nodes following the nodes first incoming node starting from [node].
+	 *
+	 * If the sequence hits a merge, the next incoming node will be the incoming node of its
+	 * direct decision, thus, skipping all nodes within the decision of the merge.
+	 *
+	 * In a valid workflow diagram, we'll find the decision node by following any path backwards.
+	 * We might visit other merge nodes before, but we'll jump over them to reach the decision
+	 * node that corresponds to this decision node.
+	 *
+	 * @param node the starting node
+	 */
 	private fun predecessorsSkippingDecisionGroups(node: Node?): Sequence<Node> {
-		// remember and filter seen nodes to avoid infinite sequence for workflow cycles
-		val seenNodes: MutableSet<Node> = mutableSetOf()
-		return filterablePredecessorSequenceSkippingDecisionGroups(node) { seenNodes.add(it) }
+		return generateUniqueNodeSequence(node) {
+			when (it) {
+				is Merge -> it.decision?.incoming?.firstOrNull()
+				else -> it.incoming.firstOrNull()
+			}
+		}
 	}
 
-	private fun filterablePredecessorSequenceSkippingDecisionGroups(node: Node?, predicate: (Node) -> Boolean): Sequence<Node> {
+	/**
+	 * Generates a sequence using the function [next].
+	 * The sequence ends as soon as [next] returns the same node twice in the entire sequence so far
+	 * or if [next] doesn't provide a value anymore.
+	 *
+	 * @param node the starting node
+	 * @param next the function to determine the next node in the sequence
+	 */
+	private fun generateUniqueNodeSequence(node: Node?, next: (Node) -> Node?): Sequence<Node> {
+		val seenNodes: MutableSet<Node> = mutableSetOf()
 		return generateSequence(node) {
-			val filteredNode = it.takeIf(predicate)
-			when (filteredNode) {
-				is Merge -> filteredNode.decision?.incoming?.firstOrNull()
-				else -> {
-					filteredNode?.incoming?.firstOrNull()
-				}
+			when (it.takeIf { seenNodes.add(it) }) {
+				is Node -> next(it)
+				else -> null
 			}
 		}
 	}
