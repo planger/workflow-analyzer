@@ -21,7 +21,7 @@ sealed class Node(val id: String?) {
 	val directlyPrecedingDecision: Decision?
 		get() {
 			val predecessorSequence = predecessorsSkippingDecisionGroups(this.incoming.firstOrNull())
-			return predecessorSequence.firstOrNull() { it is Decision } as Decision?
+			return predecessorSequence.firstOrNull() { it is Decision } as? Decision
 		}
 
 	/**
@@ -80,6 +80,20 @@ sealed class Node(val id: String?) {
 			return result.first
 		}
 
+	val executionPointInTime: PointInTime
+		get() {
+			val previousNode = this.incoming.firstOrNull()
+			return when (previousNode) {
+				is Task -> {
+					val previousNodeDuration = previousNode.duration ?: 0
+					val previousPointInTime = previousNode.executionPointInTime
+					previousPointInTime.add(PointInTime(previousNodeDuration))
+				}
+				else -> {
+					PointInTime()
+				}
+			}
+		}
 }
 
 data class Task(
@@ -99,12 +113,22 @@ data class Decision(
 
 data class Merge(val name: String? = null) : Node(name) {
 	val decision: Decision?
-		get() {
-			return directlyPrecedingDecision
-		}
+		get() = directlyPrecedingDecision
 }
 
 data class Performer(val name: String)
+
+data class PointInTime(val earliest: Int, val atLatest: Int, val onAverage: Float) {
+	
+	constructor() : this(0, 0, 0f)
+	constructor(time: Int) : this(time, time, time.toFloat())
+
+	fun add(other: PointInTime): PointInTime = PointInTime(
+			this.earliest + other.earliest,
+			this.atLatest + other.atLatest,
+			this.onAverage + other.onAverage)
+
+}
 
 fun Array<out Node>.connectTo(vararg nodes: Node): Array<out Node> {
 	for (sourceNode in this) {

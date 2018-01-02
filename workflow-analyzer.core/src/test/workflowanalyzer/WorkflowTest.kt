@@ -172,4 +172,18 @@ class WorkflowTest {
 		assertEquals(1f, task6.probability)
 	}
 
+	@Test fun testExecutionPointInTimeWithSimpleSequence() {
+		val task1 = Task("Task1", Performer("A"), 1)
+		val task2 = Task("Task2", Performer("A"), 2)
+		val task3 = Task("Task3", Performer("A"), 3)
+		val task4 = Task("Task4", Performer("A"), 4)
+
+		task1.connectTo(task2).connectTo(task3).connectTo(task4)
+
+		assertEquals(PointInTime(0, 0, 0f), task1.executionPointInTime)
+		assertEquals(PointInTime(1, 1, 1f), task2.executionPointInTime)
+		assertEquals(PointInTime(3, 3, 3f), task3.executionPointInTime)
+		assertEquals(PointInTime(6, 6, 6f), task4.executionPointInTime)
+	}
+
 }
