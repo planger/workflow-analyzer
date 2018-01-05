@@ -196,7 +196,7 @@ class WorkflowTest {
 		val join = ForkOrJoin()
 
 		task1.connectTo(fork).connectTo(task2, task3).connectTo(join).connectTo(task4)
-		
+
 		assertEquals(PointInTime(0, 0, 0f), task1.executionPointInTime)
 		// both parallel tasks can start directly after task1
 		assertEquals(PointInTime(1, 1, 1f), task2.executionPointInTime)
@@ -204,6 +204,29 @@ class WorkflowTest {
 		// task4 can only be executed after both task2 and task3 have been executed
 		// so the point in time is the maximum among all parallel branches (task3 in this case)
 		assertEquals(PointInTime(4, 4, 4f), task4.executionPointInTime)
+	}
+
+	@Test fun testExecutionPointInTimeWithADecision() {
+		val task1 = Task("Task1", Performer("A"), 1)
+		val task2 = Task("Task2", Performer("A"), 2)
+		val task3 = Task("Task3", Performer("A"), 3)
+		val task4 = Task("Task4", Performer("A"), 5)
+		val decision = Decision()
+		val merge = Merge()
+
+		task1.connectTo(decision).connectTo(task2, task3).connectTo(merge).connectTo(task4)
+		decision.probabilities[task2] = 0.2f
+		decision.probabilities[task3] = 0.8f
+
+		assertEquals(PointInTime(0, 0, 0f), task1.executionPointInTime)
+		// both conditional tasks can start directly after task1
+		assertEquals(PointInTime(1, 1, 1f), task2.executionPointInTime)
+		assertEquals(PointInTime(1, 1, 1f), task3.executionPointInTime)
+		// task4 can only be executed after either task2 and task3 have been executed
+		// so the point in time is atEarliest after task2, i.e. 3,
+		// atLatest after task3, i.e. 4
+		// and on average after 3.8: 1 (task1) + 0.2*2 (task2 in 20 % of the cases) + 0.8*3 (task3 in 80 % of the cases)
+		assertEquals(PointInTime(3, 4, 3.8000002f), task4.executionPointInTime)
 	}
 
 }

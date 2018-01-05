@@ -81,25 +81,19 @@ sealed class Node(val id: String?) {
 		}
 
 	// TODO this method is not safe for workflows with cycles
-	val executionPointInTime: PointInTime
-		get() {
-			val pointsInTimeOfIncoming = this.incoming.map { previousNode ->
-				when (previousNode) {
-					is Task -> {
-						val previousNodeDuration = previousNode.duration ?: 0
-						val previousPointInTime = previousNode.executionPointInTime
-						previousPointInTime.add(PointInTime(previousNodeDuration))
-					}
-					is Node -> {
-						previousNode.executionPointInTime
-					}
-					else -> {
-						PointInTime()
-					}
+	open val executionPointInTime: PointInTime
+		get() = executionPointsInTimeOfIncoming.maxBy { it.atLatest } ?: PointInTime()
+
+	protected val executionPointsInTimeOfIncoming
+		get() = this.incoming.map { previousNode ->
+			when (previousNode) {
+				is Task -> {
+					val previousNodeDuration = previousNode.duration ?: 0
+					val previousPointInTime = previousNode.executionPointInTime
+					previousPointInTime.add(PointInTime(previousNodeDuration))
 				}
+				is Node -> previousNode.executionPointInTime
 			}
-			// return the maximum among all points in time
-			return pointsInTimeOfIncoming.fold(PointInTime()) { current, next -> PointInTime.max(current, next) }
 		}
 }
 
@@ -119,24 +113,26 @@ data class Decision(
 ) : Node(name)
 
 data class Merge(val name: String? = null) : Node(name) {
+
 	val decision: Decision?
 		get() = directlyPrecedingDecision
+
+	override val executionPointInTime: PointInTime
+		get() {
+			val pointsInTime = executionPointsInTimeOfIncoming
+			val min = pointsInTime.minBy { it.earliest }
+			val max = pointsInTime.maxBy { it.atLatest }
+			val pointsInTimeWithNodes = pointsInTime.zip(incoming)
+			val average = pointsInTimeWithNodes.fold(0f) { current, (pointInTime, node) ->
+				current + pointInTime.onAverage * node.probability
+			}
+			return PointInTime(min?.earliest ?: 0, max?.atLatest ?: 0, average)
+		}
 }
 
 data class Performer(val name: String)
 
 data class PointInTime(val earliest: Int, val atLatest: Int, val onAverage: Float) {
-
-	companion object {
-		@JvmStatic
-		fun max(one: PointInTime, another: PointInTime): PointInTime {
-			return if (one.earliest >= another.earliest) {
-				one
-			} else {
-				another
-			}
-		}
-	}
 
 	constructor() : this(0, 0, 0f)
 	constructor(time: Int) : this(time, time, time.toFloat())
