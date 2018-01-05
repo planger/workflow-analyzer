@@ -186,4 +186,24 @@ class WorkflowTest {
 		assertEquals(PointInTime(6, 6, 6f), task4.executionPointInTime)
 	}
 
+
+	@Test fun testExecutionPointInTimeWithParallelBranches() {
+		val task1 = Task("Task1", Performer("A"), 1)
+		val task2 = Task("Task2", Performer("A"), 2)
+		val task3 = Task("Task3", Performer("A"), 3)
+		val task4 = Task("Task4", Performer("A"), 4)
+		val fork = ForkOrJoin()
+		val join = ForkOrJoin()
+
+		task1.connectTo(fork).connectTo(task2, task3).connectTo(join).connectTo(task4)
+		
+		assertEquals(PointInTime(0, 0, 0f), task1.executionPointInTime)
+		// both parallel tasks can start directly after task1
+		assertEquals(PointInTime(1, 1, 1f), task2.executionPointInTime)
+		assertEquals(PointInTime(1, 1, 1f), task3.executionPointInTime)
+		// task4 can only be executed after both task2 and task3 have been executed
+		// so the point in time is the maximum among all parallel branches (task3 in this case)
+		assertEquals(PointInTime(4, 4, 4f), task4.executionPointInTime)
+	}
+
 }

@@ -80,19 +80,26 @@ sealed class Node(val id: String?) {
 			return result.first
 		}
 
+	// TODO this method is not safe for workflows with cycles
 	val executionPointInTime: PointInTime
 		get() {
-			val previousNode = this.incoming.firstOrNull()
-			return when (previousNode) {
-				is Task -> {
-					val previousNodeDuration = previousNode.duration ?: 0
-					val previousPointInTime = previousNode.executionPointInTime
-					previousPointInTime.add(PointInTime(previousNodeDuration))
-				}
-				else -> {
-					PointInTime()
+			val pointsInTimeOfIncoming = this.incoming.map { previousNode ->
+				when (previousNode) {
+					is Task -> {
+						val previousNodeDuration = previousNode.duration ?: 0
+						val previousPointInTime = previousNode.executionPointInTime
+						previousPointInTime.add(PointInTime(previousNodeDuration))
+					}
+					is Node -> {
+						previousNode.executionPointInTime
+					}
+					else -> {
+						PointInTime()
+					}
 				}
 			}
+			// return the maximum among all points in time
+			return pointsInTimeOfIncoming.fold(PointInTime()) { current, next -> PointInTime.max(current, next) }
 		}
 }
 
@@ -119,7 +126,18 @@ data class Merge(val name: String? = null) : Node(name) {
 data class Performer(val name: String)
 
 data class PointInTime(val earliest: Int, val atLatest: Int, val onAverage: Float) {
-	
+
+	companion object {
+		@JvmStatic
+		fun max(one: PointInTime, another: PointInTime): PointInTime {
+			return if (one.earliest >= another.earliest) {
+				one
+			} else {
+				another
+			}
+		}
+	}
+
 	constructor() : this(0, 0, 0f)
 	constructor(time: Int) : this(time, time, time.toFloat())
 
