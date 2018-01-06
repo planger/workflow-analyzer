@@ -66,18 +66,17 @@ sealed class Node(val id: String?) {
 	val probability: Float
 		get() {
 			val predecessorSequence = predecessorsSkippingDecisionGroups(this.incoming.firstOrNull())
-			val result = predecessorSequence.fold(Pair(1f, this)) { previousResult, nextNode ->
+			val (result, _) = predecessorSequence.fold(Pair(1f, this)) { (currentProbability, previousNode), nextNode ->
 				when (nextNode) {
 					is Decision -> {
-						val probabilitySoFar = previousResult.first
-						val nextProbability = nextNode.probabilities[previousResult.second] ?: 1f
-						val combinedProbability = probabilitySoFar * nextProbability
+						val nextProbability = nextNode.probabilities[previousNode] ?: 1f
+						val combinedProbability = currentProbability * nextProbability
 						Pair(combinedProbability, nextNode)
 					}
-					else -> Pair(previousResult.first, nextNode)
+					else -> Pair(currentProbability, nextNode)
 				}
 			}
-			return result.first
+			return result
 		}
 
 	// TODO this method is not safe for workflows with cycles
