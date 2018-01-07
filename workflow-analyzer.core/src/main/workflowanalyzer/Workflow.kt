@@ -63,7 +63,7 @@ sealed class Node(val id: String?) {
 		}
 	}
 
-	val probability: Float
+	val overAllProbability: Float
 		get() {
 			val predecessorSequence = predecessorsSkippingDecisionGroups(this.incoming.firstOrNull())
 			val (result, _) = predecessorSequence.fold(Pair(1f, this)) { (currentProbability, previousNode), nextNode ->
@@ -77,6 +77,14 @@ sealed class Node(val id: String?) {
 				}
 			}
 			return result
+		}
+
+	val probabilityInBranch: Float
+		get() {
+			val predecessorSequence = predecessorsSkippingDecisionGroups(this)
+			val nodeDirectlyAfterDecision = predecessorSequence.find { it.incoming.any { it is Decision } }
+			val decision = nodeDirectlyAfterDecision?.incoming?.find { it is Decision } as? Decision
+			return decision?.probabilities?.get(nodeDirectlyAfterDecision) ?: 1f
 		}
 
 	// TODO this method is not safe for workflows with cycles
@@ -121,12 +129,19 @@ data class Merge(val name: String? = null) : Node(name) {
 			val pointsInTime = executionPointsInTimeOfIncoming
 			val min = pointsInTime.minBy { it.earliest }
 			val max = pointsInTime.maxBy { it.atLatest }
+			val pointInTimeOfDecision = this.decision?.executionPointInTime ?: PointInTime()
 			val pointsInTimeWithNodes = pointsInTime.zip(incoming)
-			val average = pointsInTimeWithNodes.fold(0f) { current, (pointInTime, node) ->
-				current + pointInTime.onAverage * node.probability
+			val average = pointsInTimeWithNodes.fold(pointInTimeOfDecision.onAverage) { current, (pointInTime, node) ->
+				val branchDuration = pointInTime.onAverage - pointInTimeOfDecision.onAverage
+				current + branchDuration * node.probabilityInBranch
 			}
 			return PointInTime(min?.earliest ?: 0, max?.atLatest ?: 0, average)
 		}
+}
+
+fun Node.duration(): Int = when (this) {
+	is Task -> this.duration ?: 0
+	else -> 0
 }
 
 data class Performer(val name: String)
