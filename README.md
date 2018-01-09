@@ -83,6 +83,10 @@ Once you specified a workflow, there are a couple of metrics you can compute fro
   - The earliest point in time is the path with the minimal durations from the first node to the node in question. This is the minimal duration before the node can ever be executed (best case).
   - The latest point in time is the path with the maximal durations from the first node to the node in question. This is the maximal duration before the node is executed (worst case).
   - The average point in time takes the probabilities of decisions into account and specifies the average case for executing the workflow.
+
+### Examples
+
+Please have a look at the [workflow tests](./workflow-analyzer.core/src/test/workflowanalyzer/WorkflowTest.kt) for more examples.
   
 ### Limitations
 
