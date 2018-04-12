@@ -102,6 +102,12 @@ sealed class Node(val id: String?) {
 				is Node -> previousNode.executionPointInTime
 			}
 		}
+
+	val isJoin: Boolean
+		get() = this is ForkOrJoin && this.incoming.count() > 1
+
+	val nodeExecutionIterator: NodeExecutionIterator
+		get() = NodeExecutionIterator(this)
 }
 
 data class Task(
@@ -165,6 +171,84 @@ fun Array<out Node>.connectTo(vararg nodes: Node): Array<out Node> {
 		}
 	}
 	return nodes
+}
+
+class NodeExecutionIterator(private val startingNodes: List<Node>) : AbstractIterator<Node>() {
+
+	private val executionStack = ParallelExecutionStack()
+	private var nextNode: Node? = null
+
+	constructor(node: Node) : this(listOf(node))
+
+	init {
+		executionStack.pushExecution(startingNodes)
+	}
+
+	override fun computeNext() {
+		if (nextNode == null) {
+			if (executionStack.hasNodeInTopExecution()) {
+				nextNode = executionStack.popNodeFromTopExecution()
+				if (!executionStack.hasNodeInTopExecution()) {
+					executionStack.popExecution() // remove empty execution
+				}
+			} else if (executionStack.hasMoreExecutions()) {
+				nextNode = executionStack.popNodeFromTopExecution()
+			}
+		}
+
+		if (nextNode != null) {
+			if (nextNode!!.isJoin && executionStack.hasNodeInTopExecution()) {
+				setNext(executionStack.popNodeFromTopExecution()!!)
+				if (!executionStack.hasNodeInTopExecution()) {
+					executionStack.popExecution() // remove empty execution
+					executionStack.pushExecution(nextNode!!.outgoing)
+				}
+			} else {
+				setNext(nextNode!!)
+				if (nextNode is Decision) {
+					executionStack.pushExecution(listOf(nextNode!!.outgoing.first()))
+				} else {
+					executionStack.pushExecution(nextNode!!.outgoing)
+				}
+			}
+			nextNode = null
+		} else {
+			done()
+		}
+
+	}
+}
+
+class ParallelExecutionStack() {
+
+	private val executions = mutableListOf<MutableList<Node>>()
+
+	fun pushExecution(nodes: List<Node>) {
+		val nodeList = mutableListOf<Node>()
+		nodeList.addAll(nodes)
+		executions.add(nodeList)
+	}
+
+	fun popExecution(): List<Node>? {
+		if (!executions.isEmpty()) {
+			return executions.removeAt(executions.count() - 1).toList()
+		}
+		return null
+	}
+
+	fun hasMoreExecutions() = !executions.isEmpty()
+
+	fun hasNodeInTopExecution() = !executions.isEmpty() && !executions.last().isEmpty()
+
+	fun popNodeFromTopExecution(): Node? {
+		val node: Node?
+		if (hasNodeInTopExecution()) {
+			node = executions.last().removeAt(0)
+		} else {
+			node = null
+		}
+		return node
+	}
 }
 
 fun main(args: Array<String>) {

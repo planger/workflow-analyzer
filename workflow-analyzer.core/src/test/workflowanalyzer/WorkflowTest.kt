@@ -10,7 +10,8 @@ import org.junit.Assert
 
 class WorkflowTest {
 
-	@Test fun testIncomingAndOutgoingEdges() {
+	@Test
+	fun testIncomingAndOutgoingEdges() {
 		// setup
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
@@ -42,7 +43,8 @@ class WorkflowTest {
 		assertTrue(containedNodes.none { !nodes.contains(it) })
 	}
 
-	@Test fun testObtainingDirectDecisionFromMerge() {
+	@Test
+	fun testObtainingDirectDecisionFromMerge() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -55,7 +57,8 @@ class WorkflowTest {
 		assertSame(decision, merge.decision)
 	}
 
-	@Test fun testObtainingDecisionFromMergeWithADecisionInbetween() {
+	@Test
+	fun testObtainingDecisionFromMergeWithADecisionInbetween() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -76,7 +79,8 @@ class WorkflowTest {
 		assertSame(decision2, merge2.decision)
 	}
 
-	@Test fun testObtainingDecisionFromMergeDoesntRunForeverWithCycles() {
+	@Test
+	fun testObtainingDecisionFromMergeDoesntRunForeverWithCycles() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -89,7 +93,8 @@ class WorkflowTest {
 		assertNull(merge.decision)
 	}
 
-	@Test fun testDirectlyPreceedingDecision() {
+	@Test
+	fun testDirectlyPreceedingDecision() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -113,7 +118,8 @@ class WorkflowTest {
 		assertNull(task6.directlyPrecedingDecision)
 	}
 
-	@Test fun testProbabilityOfNodeWithoutPreceedingDecision() {
+	@Test
+	fun testProbabilityOfNodeWithoutPreceedingDecision() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		task1.connectTo(task2)
@@ -122,7 +128,8 @@ class WorkflowTest {
 		assertEquals(1f, task2.overAllProbability)
 	}
 
-	@Test fun testProbabilityOfNodeWithOnePreceedingDecision() {
+	@Test
+	fun testProbabilityOfNodeWithOnePreceedingDecision() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -149,7 +156,8 @@ class WorkflowTest {
 		assertEquals(1f, task5.overAllProbability)
 	}
 
-	@Test fun testCombinedProbabilitiesWithMultipleDecisions() {
+	@Test
+	fun testCombinedProbabilitiesWithMultipleDecisions() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -189,7 +197,8 @@ class WorkflowTest {
 		assertEquals(1f, task7.overAllProbability)
 	}
 
-	@Test fun testExecutionPointInTimeWithSimpleSequence() {
+	@Test
+	fun testExecutionPointInTimeWithSimpleSequence() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -204,7 +213,8 @@ class WorkflowTest {
 	}
 
 
-	@Test fun testExecutionPointInTimeWithParallelBranches() {
+	@Test
+	fun testExecutionPointInTimeWithParallelBranches() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -223,7 +233,8 @@ class WorkflowTest {
 		assertEquals(PointInTime(4, 4, 4f), task4.executionPointInTime)
 	}
 
-	@Test fun testExecutionPointInTimeWithADecision() {
+	@Test
+	fun testExecutionPointInTimeWithADecision() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -246,7 +257,8 @@ class WorkflowTest {
 		assertEquals(PointInTime(3, 4, 3.8000002f), task4.executionPointInTime)
 	}
 
-	@Test fun testExecutionPointInTimeWithMultipleDecisions() {
+	@Test
+	fun testExecutionPointInTimeWithMultipleDecisions() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -287,7 +299,8 @@ class WorkflowTest {
 		assertEquals(PointInTime(4, 14, 5.86f), task7.executionPointInTime)
 	}
 
-	@Test fun testExecutionPointInTimeWithMultipleDecisionsAndParallelBranches() {
+	@Test
+	fun testExecutionPointInTimeWithMultipleDecisionsAndParallelBranches() {
 		val task1 = Task("Task1", Performer("A"), 1)
 		val task2 = Task("Task2", Performer("A"), 2)
 		val task3 = Task("Task3", Performer("A"), 3)
@@ -300,8 +313,8 @@ class WorkflowTest {
 		val merge = Merge("merge")
 		val decision2 = Decision("decision2")
 		val merge2 = Merge("merge2")
-		val fork = ForkOrJoin("test1")
-		val join = ForkOrJoin("test2")
+		val fork = ForkOrJoin("test1") // we need names to prevent fork.equals(join) in set used in cycle detection
+		val join = ForkOrJoin("test2") // we need names to prevent join.equals(fork) in set used in cycle detection
 
 		task1.connectTo(decision).connectTo(task2, task3)
 		task2.connectTo(decision2).connectTo(task4, task5)
@@ -321,6 +334,39 @@ class WorkflowTest {
 		// 1 + 2 + 4 = 7 (Earliest)
 		// 1 + 3 + 7 = 10 (At Latest)
 		assertEquals(PointInTime(7, 11, 9.72f), task8.executionPointInTime)
+	}
+
+	@Test
+	fun testNodeExecutionIterator() {
+		val task1 = Task("Task1", Performer("A"), 1)
+		val task2 = Task("Task2", Performer("A"), 2)
+		val task3 = Task("Task3", Performer("A"), 3)
+		val task4 = Task("Task4", Performer("A"), 4)
+		val task5 = Task("Task5", Performer("A"), 5)
+		val task6 = Task("Task6", Performer("A"), 6)
+		val task7 = Task("Task7", Performer("A"), 7)
+		val task8 = Task("Task8", Performer("A"), 8)
+		val forkA = ForkOrJoin("forkA")
+		val joinA = ForkOrJoin("joinA")
+		val forkB = ForkOrJoin("forkB")
+		val joinB = ForkOrJoin("joinB")
+		val joinC = ForkOrJoin("joinC")
+
+		task1.connectTo(forkA).connectTo(task2, task6, task7)
+		task2.connectTo(forkB).connectTo(task3, task4).connectTo(joinB).connectTo(task5)
+		arrayOf(task5, task6).connectTo(joinA)
+		arrayOf(joinA, task7).connectTo(joinC).connectTo(task8)
+
+		val iterator = task1.nodeExecutionIterator
+		var counter = 1
+		for (node in iterator) {
+			when (node) {
+				is Task -> {
+					assertTrue(node.name.endsWith(counter.toString()))
+					counter++
+				}
+			}
+		}
 	}
 
 }
